@@ -1,10 +1,12 @@
 TerminalActivator - iolate
 
 Call SpringBoard events via Activator on Terminal.
+You can use Activator events on Terminal or SSH.
 
 -----------------
 
-You can use Activator events on Terminal or SSH.
+#import <libactivator/libactivator2.h>
+ -> https://github.com/rpetrich/libactivator/blob/master/libactivator.h
 
 
 ==HOW-TO-USE==
