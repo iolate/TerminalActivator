@@ -11,6 +11,7 @@ You can use Activator events on Terminal or SSH.
 bash shell script:
 	$ notify_post [name]
 	(type "notify_post ta_test". NOT "notify_post [ta_test]")
+	(ta_text is just example.)
 
 Command Line Tool:
 1. import header
