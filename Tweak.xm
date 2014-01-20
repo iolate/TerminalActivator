@@ -4,6 +4,10 @@
 
 #define SettingPath @"/var/mobile/Library/Preferences/kr.iolate.TerminalActivator.plist"
 
+@interface NSObject (Activator)
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+@end
+
 @interface TerminalActivator : NSObject <LAEventDataSource>
 {
     NSDictionary* dicList;
@@ -30,7 +34,7 @@ static void callEvent(CFNotificationCenterRef center, void *observer, CFStringRe
 	
     NSString* nName = (NSString *)name;
     
-    NSLog(@"callEvent %@", name);
+    //NSLog(@"callEvent %@", name);
     NSDictionary* dic = [[TerminalActivator sharedInstance] dicList];
     
     if ([[dic allKeys] containsObject:nName])
@@ -52,7 +56,9 @@ static void callEvent(CFNotificationCenterRef center, void *observer, CFStringRe
             
             LAEvent *event = [[[LAEvent alloc] initWithName:@"TerminalActivator" mode:[LASharedActivator currentEventMode]] autorelease];
             id<LAListener> listener = [LASharedActivator listenerForName:lEvent];
-            objc_msgSend(listener, NSSelectorFromString(@"activator:receiveEvent:forListenerName:"), LASharedActivator, event, lEvent);
+            [listener activator:LASharedActivator receiveEvent:event forListenerName:lEvent];
+            //Crash on arm64
+            //objc_msgSend(listener, NSSelectorFromString(@"activator:receiveEvent:forListenerName:"), LASharedActivator, event, lEvent);
         }
         
     }
