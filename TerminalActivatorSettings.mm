@@ -3,8 +3,23 @@
 #import <UIKit/UIKit.h>
 #import <libactivator/libactivator.h>
 
+#define overiOS7 (kCFCoreFoundationVersionNumber >= 847.2)
 #define SettingPath @"/var/mobile/Library/Preferences/kr.iolate.TerminalActivator.plist"
 #define LS(a) a
+
+@interface PSListController (Omitted)
+-(void)loadView;
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath;
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath;
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView;
+-(NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section;
+-(NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section;
+-(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section;
+- (void)viewWillDisappear:(BOOL)animated;
+- (void)viewWillAppear:(BOOL)animated;
+- (void)viewDidLoad;
+-(void)lazyLoadBundle:(NSBundle *)bundle;
+@end
 
 @interface TerminalActivatorSettingsListController: PSListController {
 }
@@ -37,23 +52,19 @@
 @property(nonatomic, retain) NSString* num;
 @end
 
-@interface AddNoties : PSViewController <UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate> {
+@interface NotificationsListViewController : PSListController <UITextFieldDelegate> {
     UITableView *_tableView;
     NSMutableDictionary* dicList;
-    NSMutableString *_title;
-    UIView *window;
-    UIView *__view;
     
     UIAlertView* urlAlert;
     UITextField* urlText;
+
 }
 
-+(AddNoties *)sharedInstance;
++(NotificationsListViewController *)sharedInstance;
 - (void)loadSetting;
 - (id)init;
-- (id) view;
-- (id)_tableView;
-- (id) navigationTitle;
+- (id)tableView;
 
 @property(nonatomic, retain) UIAlertView* urlAlert;
 @property(nonatomic, retain) UITextField* urlText;
@@ -70,12 +81,7 @@
     LAEvent *event = [[[LAEvent alloc] initWithName:@"kr.iolate.terminalactivator.event"] autorelease];
     [LASharedActivator unassignEvent:event];
     
-    NSDictionary* dic;
-    
-    if([[NSFileManager defaultManager] fileExistsAtPath:SettingPath])
-        dic = [[NSMutableDictionary alloc] initWithContentsOfFile:SettingPath];
-    else
-        dic = [[NSMutableDictionary alloc] init];
+    NSDictionary* dic = [[NSMutableDictionary alloc] initWithContentsOfFile:SettingPath] ?: [[NSMutableDictionary alloc] init];
     
     if ([[dic allKeys] containsObject:mName]) {
         assignedLName = [dic objectForKey:mName];
@@ -84,7 +90,6 @@
             if ([[assignedLName substringToIndex:12] isEqualToString:@"libactivator"])
                 assignedLName = [assignedLName substringFromIndex:13];
     }
-    
     
     [dic release];
     if (![assignedLName isEqualToString:@""])
@@ -128,8 +133,8 @@
     [dic writeToFile:SettingPath atomically:NO];
     [dic release];
     
-    [[AddNoties sharedInstance] loadSetting];
-    [[[AddNoties sharedInstance] _tableView] reloadData];
+    [[NotificationsListViewController sharedInstance] loadSetting];
+    [[[NotificationsListViewController sharedInstance] tableView] reloadData];
 
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("kr.iolate.terminalactivator.reloadsetting"), NULL, NULL, true);
 
@@ -144,12 +149,15 @@
 @end
 
 
-static AddNoties* sharedInstance;
-
-@implementation AddNoties
+@implementation NotificationsListViewController
 @synthesize urlAlert, urlText;
-+(AddNoties *)sharedInstance
++(NotificationsListViewController *)sharedInstance
 {
+    static NotificationsListViewController* sharedInstance = nil;
+    if (sharedInstance == nil) {
+        sharedInstance = [[NotificationsListViewController alloc] init];
+    }
+    
     return sharedInstance;
 }
 
@@ -161,64 +169,50 @@ static AddNoties* sharedInstance;
         dicList = nil;
     }
     
-    if([[NSFileManager defaultManager] fileExistsAtPath:SettingPath])
-       dicList = [[NSMutableDictionary alloc] initWithContentsOfFile:SettingPath];
-    else
-       dicList = [[NSMutableDictionary alloc] init];
-
+    dicList = [[NSMutableDictionary alloc] initWithContentsOfFile:SettingPath] ?: [[NSMutableDictionary alloc] init];
 }
 
 -(id) init
 {
     if ((self = [super init])) {
-        NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-        
-        sharedInstance = self;
         dicList = nil;
         
-        [self loadSetting];     
-        
-        _tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 320, 416) style:UITableViewStylePlain];
-        [_tableView setDelegate:self];
-        [_tableView setDataSource:self];
-        
-        __view = nil;
-		window = [[UIApplication sharedApplication] keyWindow];
-		if (window == nil) {
-			__view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 480-64)];
-			[__view addSubview:_tableView];
-			window = __view;
-		}
-        
-        if(!_title)
-			_title = [[NSMutableString alloc] init];
-        
-		[_title setString:LS(@"TerminalActivator")];
-        
-        if ([self respondsToSelector:@selector(navigationItem)]) {
-			[[self navigationItem] setTitle:_title];
-		}
-        
-        [pool drain];
+        [self loadSetting];
     }
     
     return self;
 }
 
-- (id) view {
-    if (__view)
-        return __view;
-    
+- (id)specifiers {
+    return nil;
+}
+- (void)setSpecifier:(PSSpecifier *)specifier
+{
+    _tableView = nil;
+}
+
+-(UITableView *)tableView {
     return _tableView;
 }
 
-- (id) _tableView {
-    return _tableView;
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    self.title = @"TerminalActivator";
+}
+-(NSString *)stringForSpeech {
+    return nil;
 }
 
-- (id) navigationTitle {
-    return _title;
+-(void)lazyLoadBundle:(id)bundle
+{
+    if ([super respondsToSelector:@selector(lazyLoadBundle:)]) {
+        [super lazyLoadBundle:bundle];
+    }else{
+        [[self rootController] lazyLoadBundle:bundle];
+    }
 }
+
 
 -(void)showAlertView
 {
@@ -235,30 +229,38 @@ static AddNoties* sharedInstance;
     }
     
     urlAlert = [[UIAlertView alloc] initWithTitle:LS(@"New Noti Name")
-                                          message:@"\n\n"
+                                          message:(overiOS7) ? @"" : @"\n\n"
                                          delegate:self
                                 cancelButtonTitle:LS(@"Cancel")
                                 otherButtonTitles:LS(@"Complete"), nil];
-    
-    urlText = [[UITextField alloc] initWithFrame:CGRectMake(25.0f, 55.0f, 230.0f, 31.0f)];
-    
-    [urlText setBorderStyle:UITextBorderStyleRoundedRect];
     urlAlert.tag = 1;
-    urlText.tag = 1;
-    urlText.delegate = self;
-    urlText.text = @"";
-    urlText.clearButtonMode = UITextFieldViewModeAlways;
-    [urlAlert addSubview:urlText];
     
+    if (overiOS7) {
+        urlAlert.alertViewStyle = UIAlertViewStylePlainTextInput;
+    }else{
+        urlText = [[UITextField alloc] initWithFrame:CGRectMake(25.0f, 55.0f, 230.0f, 31.0f)];
+        
+        [urlText setBorderStyle:UITextBorderStyleRoundedRect];
+        urlText.tag = 1;
+        urlText.delegate = self;
+        urlText.text = @"";
+        urlText.clearButtonMode = UITextFieldViewModeAlways;
+        [urlAlert addSubview:urlText];
+    }
+
     [urlAlert show];
-    [urlText becomeFirstResponder];
+    
+    if (!overiOS7) {
+        [urlText becomeFirstResponder];
+    }
 }
 
 -(BOOL)textFieldShouldReturn:(UITextField *)textField
 {
+    //<=iOS6
     if (textField.tag == 1) {
         if ([[dicList allKeys] containsObject:urlText.text]) {
-            UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"AppDialer"
+            UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"TerminalActivator"
                                                             message:LS(@"This name is existed.")
                                                            delegate:self
                                                   cancelButtonTitle:LS(@"OK")
@@ -288,9 +290,17 @@ static AddNoties* sharedInstance;
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex { 
 	if (alertView.tag == 1 && buttonIndex == 1) {
-
-        if ([[dicList allKeys] containsObject:urlText.text]) {
-            UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"AppDialer"
+        
+        NSString* inputText = nil;
+        if (overiOS7) {
+            UITextField* textField = [alertView textFieldAtIndex:0];
+            inputText = textField.text;
+        }else{
+            inputText = urlText.text;
+        }
+        
+        if ([[dicList allKeys] containsObject:inputText]) {
+            UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"TerminalActivator"
                                                             message:LS(@"This name is existed.")
                                                            delegate:self
                                                   cancelButtonTitle:LS(@"OK")
@@ -299,15 +309,15 @@ static AddNoties* sharedInstance;
             [alert show];
             [alert release];
         }else {
-            [dicList setObject:@"" forKey:urlText.text];
+            [dicList setObject:@"" forKey:inputText];
             
             [dicList writeToFile:SettingPath atomically:NO];
             
-            [_tableView reloadData];
+            [self.tableView reloadData];
             
             //NSString* numText = [NSString stringWithString:urlText.text];
             
-            eventActivator *vac = [[[eventActivator alloc] initWithName:[NSString stringWithString:urlText.text]] autorelease];
+            eventActivator *vac = [[[eventActivator alloc] initWithName:[NSString stringWithString:inputText]] autorelease];
             [self pushController:vac];
         }
         
@@ -317,13 +327,16 @@ static AddNoties* sharedInstance;
 }
 
 - (NSInteger) numberOfSectionsInTableView:(UITableView *)tableView {
+    _tableView = tableView;
     return 2;
 }
 
-- (id) tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+- (NSString *) tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     return nil;
 }
-
+-(NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    return nil;
+}
 - (NSInteger) tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
 	if (section == 0) return 1;
 	else {
@@ -335,6 +348,8 @@ static AddNoties* sharedInstance;
 }
 
 - (id) tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    _tableView = tableView;
+    
     static NSString* CellInsert = @"CellInsert";
     static NSString* Cell = @"Cell";
     
@@ -350,7 +365,6 @@ static AddNoties* sharedInstance;
     		[cell addSubview:addButton];
     		//[addButton release];
     	}
-    	
     	
     	cell.textLabel.text = [NSString stringWithFormat:@"        %@", LS(@"Add Item")];;
     	
@@ -374,11 +388,6 @@ static AddNoties* sharedInstance;
         else
             splitS = [NSMutableArray arrayWithObjects:@"", actionName, nil];
         
-        /*if ([[splitS objectAtIndex:0] isEqualToString:@"appdialer"]) {
-            [splitS removeObjectAtIndex:0];
-            
-            cell.detailTextLabel.text = @"";
-        }else  */
         if ([[splitS objectAtIndex:0] isEqualToString:@"libactivator"]) {
             [splitS removeObjectAtIndex:0];
             cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ - %@", LS(@"Activator"), [LASharedActivator localizedTitleForListenerName:[splitS componentsJoinedByString:@"."]]];
@@ -411,7 +420,20 @@ static AddNoties* sharedInstance;
         
     }
 }
+- (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath
+{
+}
 
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 44;
+}
+-(int)indexForIndexPath {
+    //indexForIndexPath, tableView:heightForRowAtIndexPath:
+    //PSListController without specifiers.
+    
+    return 0;
+}
 // Override to support conditional editing of the table view.
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
     // Return NO if you do not want the specified item to be editable.
@@ -420,7 +442,12 @@ static AddNoties* sharedInstance;
     else
     	return NO;
 }
-
+- (BOOL)tableView:(UITableView *)tableview shouldIndentWhileEditingRowAtIndexPath:(NSIndexPath *)indexPath {
+    return NO;
+}
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+    return YES;
+}
 // Override to support editing the table view.
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     
@@ -441,11 +468,13 @@ static AddNoties* sharedInstance;
 }
 
 - (void) dealloc {
-    [dicList release];
-    [_tableView release];
-    [_title release];
-    [__view release];
-    
     [super dealloc];
 }
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) return YES;
+    else return (interfaceOrientation == UIInterfaceOrientationPortrait);
+}
+
 @end

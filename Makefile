@@ -1,3 +1,5 @@
+FW_DEVICE_IP=10.0.1.3
+
 include theos/makefiles/common.mk
 
 TWEAK_NAME = TerminalActivator
