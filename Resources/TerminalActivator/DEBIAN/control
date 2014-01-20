@@ -1,8 +1,0 @@
-Package: kr.iolate.terminalactivator
-Name: TerminalActivator
-Version: 1.1
-Architecture: iphoneos-arm
-Depends: mobilesubstrate, libactivator (>= 1.5.5), preferenceloader, firmware (>= 4.0)
-Section: Tweak
-Maintainer: iolate <iolate@me.com>
-Description: Call SpringBoard events via Activator on Terminal.
