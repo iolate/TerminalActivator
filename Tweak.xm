@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-#import <libactivator/libactivator2.h>
+#import <libactivator/libactivator.h>
 #import <objc/message.h>
 
 #define SettingPath @"/var/mobile/Library/Preferences/kr.iolate.TerminalActivator.plist"

@@ -1,7 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <Preferences/Preferences.h>
 #import <UIKit/UIKit.h>
-#import <libactivator/libactivator2.h>
+#import <libactivator/libactivator.h>
 
 #define SettingPath @"/var/mobile/Library/Preferences/kr.iolate.TerminalActivator.plist"
 #define LS(a) a
@@ -96,7 +96,7 @@
     
     superObject.navigationItem.title = @"TerminalActivator";
     
-    return superObject;
+    return (eventActivator *)superObject;
 }
 
 - (void)viewWillDisappear:(BOOL)animated
@@ -316,15 +316,15 @@ static AddNoties* sharedInstance;
     }
 }
 
-- (int) numberOfSectionsInTableView:(UITableView *)tableView {
+- (NSInteger) numberOfSectionsInTableView:(UITableView *)tableView {
     return 2;
 }
 
-- (id) tableView:(UITableView *)tableView titleForHeaderInSection:(int)section {
+- (id) tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     return nil;
 }
 
-- (int) tableView:(UITableView *)tableView numberOfRowsInSection:(int)section {
+- (NSInteger) tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
 	if (section == 0) return 1;
 	else {
     	if(![[dicList allKeys] count])
